@@ -1,0 +1,427 @@
+{% extends 'base.html' %}
+{% load game_tags %}
+{% load static %}
+
+{% block title %}Treasure Hunt - {{ game_session.current_stage|title }}{% endblock %}
+
+{% block nav_left %}
+<a href="{% url 'game:user_profile' %}" class="inline-flex items-center px-4 py-2 border border-neon-500 text-sm font-medium rounded-md text-neon-500 bg-black/90 hover:bg-neon-500 hover:text-black transition-all duration-300">
+    Back to Home
+</a>
+{% endblock %}
+
+{% block nav_right %}
+<!-- Music Toggle Button -->
+<button id="musicToggle" class="cyber-button px-4 py-2 rounded flex items-center space-x-2">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 11-.99-3.467l2.31-.66a2.25 2.25 0 001.632-2.163zm0 0V2.25L9 5.25v10.303m0 0v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 01-.99-3.467l2.31-.66A2.25 2.25 0 009 15.553z" />
+    </svg>
+    <span id="musicStatus">Music On</span>
+</button>
+<!-- Logout Button -->
+<a href="{% url 'game:logout' %}" class="cyber-button px-4 py-2 rounded flex items-center space-x-2">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+    </svg>
+    <span>Logout</span>
+</a>
+{% endblock %}
+
+{% block content %}
+<!-- Audio Element -->
+<audio id="backgroundMusic" loop autoplay>
+    <source src="{% static 'music/bg_music.mp3' %}" type="audio/mpeg">
+    Your browser does not support the audio element.
+</audio>
+
+<div class="max-w-4xl mx-auto">
+    <!-- Game Status -->
+    <div class="bg-black/90 backdrop-blur-sm rounded-lg shadow-lg p-6 mb-8 border border-neon-500">
+        <div class="flex justify-between items-center">
+            <div>
+                <h2 class="text-2xl font-bold text-neon-500">Stage: {{ game_session.current_stage|title }}</h2>
+                <p class="text-gray-300">Find the treasure by solving each stage!</p>
+            </div>
+            <div class="text-center">
+                <span class="block text-sm text-neon-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="inline-block w-4 h-4 text-red-400 -mr-1">
+                        <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
+                    </svg>
+                    Lives
+                </span>
+                <span class="text-2xl font-bold text-gray-300">{{ game_session.lives_remaining }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Map Container -->
+    <div class="bg-black/90 backdrop-blur-sm rounded-lg shadow-lg p-6 mb-8 border border-neon-500">
+        <h3 class="text-xl font-bold text-neon-500 mb-4">Map</h3>
+        <!-- Leaflet map container -->
+        <div id="map" class="w-full h-64 rounded-lg border border-neon-500/30"></div>
+    </div>
+
+    <!-- Challenge Card -->
+    <div class="bg-black/90 backdrop-blur-sm rounded-lg shadow-lg p-6 mb-8 border border-neon-500">
+        <h3 class="text-xl font-bold text-neon-500 mb-4">Current Challenge</h3>
+        {% if current_challenge %}
+            <div class="space-y-6">
+                <!-- Encrypted Message -->
+                <div class="bg-gray-900/50 p-4 rounded-lg border border-neon-500/30">
+                    <h4 class="text-lg font-semibold text-neon-500 mb-2">Encrypted Message:</h4>
+                    <p id="encrypted-message" class="text-gray-300 font-mono text-lg">{{ current_challenge.encrypted_message }}</p>
+                </div>
+
+                <!-- Encryption Type -->
+                <div>
+                    <h4 class="text-lg font-semibold text-neon-500 mb-2">Encryption Type:</h4>
+                    <p id="encryption-type" class="text-gray-300">{{ current_challenge.encryption_type }}</p>
+                </div>
+
+                <!-- Tutorial -->
+                <div class="bg-blue-900/50 p-4 rounded-lg border border-blue-500/30">
+                    <h4 class="text-lg font-semibold text-blue-400 mb-2">Tutorial:</h4>
+                    <p id="tutorial" class="text-blue-300">{{ current_challenge.tutorial }}</p>
+                </div>
+
+                <!-- Hint -->
+                <div class="bg-yellow-900/50 p-4 rounded-lg border border-yellow-500/30">
+                    <h4 class="text-lg font-semibold text-yellow-400 mb-2">Hint:</h4>
+                    <p id="hint" class="text-yellow-300">{{ current_challenge.hint }}</p>
+                </div>
+
+                <!-- Answer Form -->
+                <form id="answerForm" class="mt-6">
+                    {% csrf_token %}
+                    <div class="flex space-x-4">
+                        <input type="text" 
+                               id="answer"
+                               name="answer" 
+                               class="flex-1 rounded-lg bg-black/50 border border-white text-neon-500 placeholder-gray-500 focus:border-neon-500 focus:ring-neon-500 [&:-webkit-autofill]:bg-black/50 [&:-webkit-autofill]:text-[#00FF00] [&:-webkit-autofill]:shadow-[0_0_0_1000px_black_inset] [&:-webkit-autofill]:[-webkit-text-fill-color:#00FF00] px-4"
+                               placeholder="Enter your answer..."
+                               required>
+                        <button type="submit" 
+                                id="submit-answer"
+                                class="bg-black/90 text-neon-500 border border-neon-500 px-6 py-2 rounded-lg hover:shadow-[0_0_10px_var(--text-neon),0_0_20px_var(--text-neon)] hover:text-shadow-[0_0_5px_var(--text-neon)] transition-all duration-300">
+                            Submit
+                        </button>
+                    </div>
+                </form>
+            </div>
+        {% else %}
+            <p class="text-gray-300">No challenge available for this stage.</p>
+        {% endif %}
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="bg-black/90 backdrop-blur-sm rounded-lg shadow-lg p-6 border border-neon-500">
+        <h3 class="text-xl font-bold text-neon-500 mb-4">Progress</h3>
+        <div class="w-full bg-black rounded-full h-4 border border-neon-500/30 overflow-hidden">
+            {% with current_index=game_session.STAGES|get_item:game_session.current_stage %}
+            {% if current_index == 0 %}
+                <div id="progress-bar" class="bg-black h-4 rounded-full w-0 transition-all duration-500"></div>
+            {% elif current_index == 1 %}
+                <div id="progress-bar" class="bg-[#00FF00] h-4 rounded-full w-1/8 transition-all duration-500 shadow-[0_0_10px_#00FF00,0_0_20px_#00FF00]"></div>
+            {% elif current_index == 2 %}
+                <div id="progress-bar" class="bg-[#00FF00] h-4 rounded-full w-2/8 transition-all duration-500 shadow-[0_0_10px_#00FF00,0_0_20px_#00FF00]"></div>
+            {% elif current_index == 3 %}
+                <div id="progress-bar" class="bg-[#00FF00] h-4 rounded-full w-3/8 transition-all duration-500 shadow-[0_0_10px_#00FF00,0_0_20px_#00FF00]"></div>
+            {% elif current_index == 4 %}
+                <div id="progress-bar" class="bg-[#00FF00] h-4 rounded-full w-4/8 transition-all duration-500 shadow-[0_0_10px_#00FF00,0_0_20px_#00FF00]"></div>
+            {% elif current_index == 5 %}
+                <div id="progress-bar" class="bg-[#00FF00] h-4 rounded-full w-5/8 transition-all duration-500 shadow-[0_0_10px_#00FF00,0_0_20px_#00FF00]"></div>
+            {% elif current_index == 6 %}
+                <div id="progress-bar" class="bg-[#00FF00] h-4 rounded-full w-6/8 transition-all duration-500 shadow-[0_0_10px_#00FF00,0_0_20px_#00FF00]"></div>
+            {% elif current_index == 7 %}
+                <div id="progress-bar" class="bg-[#00FF00] h-4 rounded-full w-7/8 transition-all duration-500 shadow-[0_0_10px_#00FF00,0_0_20px_#00FF00]"></div>
+            {% else %}
+                <div id="progress-bar" class="bg-[#00FF00] h-4 rounded-full w-full transition-all duration-500 shadow-[0_0_10px_#00FF00,0_0_20px_#00FF00]"></div>
+            {% endif %}
+            {% endwith %}
+        </div>
+        <div class="flex justify-between mt-2 text-sm text-gray-300">
+            {% for stage, _ in game_session.STAGES %}
+                <span>{{ stage|title }}</span>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Result Modal -->
+<div id="resultModal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center">
+    <div class="bg-black/90 backdrop-blur-sm rounded-lg p-8 max-w-md w-full mx-4 border border-neon-500">
+        <div class="flex items-center justify-center mb-4">
+            <svg id="modalIcon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12 text-neon-500">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+            </svg>
+        </div>
+        <h3 id="modalTitle" class="text-2xl font-bold text-neon-500 mb-4 text-center"></h3>
+        <p id="modalMessage" class="text-gray-300 mb-6 text-center"></p>
+        <button onclick="closeModal()" class="w-full bg-black/90 text-neon-500 border border-neon-500 px-6 py-2 rounded-lg hover:shadow-[0_0_10px_var(--text-neon),0_0_20px_var(--text-neon)] hover:text-shadow-[0_0_5px_var(--text-neon)] transition-all duration-300">
+            Continue
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<style>
+/* Style for continent labels */
+.continent-label {
+    pointer-events: none; /* Labels won't block clicks */
+    white-space: nowrap;
+}
+
+/* Neon glow animation for music button */
+@keyframes neonPulse {
+    0% { box-shadow: 0 0 5px #00ff00, 0 0 10px #00ff00; }
+    50% { box-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00; }
+    100% { box-shadow: 0 0 5px #00ff00, 0 0 10px #00ff00; }
+}
+
+.music-active {
+    animation: neonPulse 2s infinite;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Background Music Control
+    const backgroundMusic = document.getElementById('backgroundMusic');
+    const musicToggle = document.getElementById('musicToggle');
+    const musicStatus = document.getElementById('musicStatus');
+    let isMusicPlaying = true;
+
+    // Try to autoplay music
+    backgroundMusic.play().then(() => {
+        isMusicPlaying = true;
+        musicToggle.classList.add('music-active');
+        musicStatus.textContent = 'Music On';
+    }).catch(error => {
+        console.log('Autoplay prevented:', error);
+        isMusicPlaying = false;
+        musicToggle.classList.remove('music-active');
+        musicStatus.textContent = 'Music Off';
+    });
+
+    // Toggle music on button click
+    musicToggle.addEventListener('click', function() {
+        if (isMusicPlaying) {
+            backgroundMusic.pause();
+            musicToggle.classList.remove('music-active');
+            musicStatus.textContent = 'Music Off';
+        } else {
+            backgroundMusic.play();
+            musicToggle.classList.add('music-active');
+            musicStatus.textContent = 'Music On';
+        }
+        isMusicPlaying = !isMusicPlaying;
+    });
+
+    // Initialize Leaflet map
+    var map = L.map('map').setView([20, 0], 0);
+
+    // Add OpenStreetMap tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Define continent polygons and label positions
+    const continentsGeoJSON = {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "properties": { "name": "Africa", "labelLat": 0, "labelLng": 20 },
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [[
+              [ -17.625, 37.21 ], [ 51.208, 37.21 ], [ 51.208, -35.19 ], [ -17.625, -35.19 ], [ -17.625, 37.21 ]
+            ]]
+          }
+        },
+        {
+          "type": "Feature",
+          "properties": { "name": "Asia", "labelLat": 45, "labelLng": 100 },
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [[
+              [ 26.04, 81.33 ], [ 180, 81.33 ], [ 180, 1.41 ], [ 26.04, 1.41 ], [ 26.04, 81.33 ]
+            ]]
+          }
+        },
+        {
+          "type": "Feature",
+          "properties": { "name": "Europe", "labelLat": 54, "labelLng": 15 },
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [[
+              [ -31.27, 81.0 ], [ 40.17, 81.0 ], [ 40.17, 35.0 ], [ -31.27, 35.0 ], [ -31.27, 81.0 ]
+            ]]
+          }
+        },
+        {
+          "type": "Feature",
+          "properties": { "name": "North America", "labelLat": 50, "labelLng": -100 },
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [[
+              [ -168.12, 83.16 ], [ -52.62, 83.16 ], [ -52.62, 7.2 ], [ -168.12, 7.2 ], [ -168.12, 83.16 ]
+            ]]
+          }
+        },
+        {
+          "type": "Feature",
+          "properties": { "name": "South America", "labelLat": -15, "labelLng": -60 },
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [[
+              [ -92.42, 15.6 ], [ -33.75, 15.6 ], [ -33.75, -56.0 ], [ -92.42, -56.0 ], [ -92.42, 15.6 ]
+            ]]
+          }
+        },
+        {
+          "type": "Feature",
+          "properties": { "name": "Australia", "labelLat": -25, "labelLng": 135 },
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [[
+              [ 112.92, -9.22 ], [ 154.0, -9.22 ], [ 154.0, -44.1 ], [ 112.92, -44.1 ], [ 112.92, -9.22 ]
+            ]]
+          }
+        },
+        {
+          "type": "Feature",
+          "properties": { "name": "Antarctica", "labelLat": -80, "labelLng": 0 },
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [[
+              [ -180, -60 ], [ 180, -60 ], [ 180, -90 ], [ -180, -90 ], [ -180, -60 ]
+            ]]
+          }
+        }
+      ]
+    };
+
+    // Add continent polygons with styling and popup
+    L.geoJSON(continentsGeoJSON, {
+      style: {
+        color: "#0077ff",
+        weight: 2,
+        fillColor: "#00aaff",
+        fillOpacity: 0.3
+      },
+      onEachFeature: function(feature, layer) {
+        layer.bindPopup(`<strong>${feature.properties.name}</strong>`);
+      }
+    }).addTo(map);
+
+    // Add continent labels at approximate centroids using DivIcons
+    continentsGeoJSON.features.forEach(function(feature) {
+      const label = feature.properties.name;
+      const lat = feature.properties.labelLat;
+      const lng = feature.properties.labelLng;
+
+      const labelIcon = L.divIcon({
+        className: 'continent-label',
+        html: `<div style="color:#0077ff; font-weight:bold; font-size:14px; text-shadow: 1px 1px 2px white;">${label}</div>`,
+        iconSize: [100, 20],
+        iconAnchor: [50, 10]
+      });
+
+      L.marker([lat, lng], {icon: labelIcon, interactive: false}).addTo(map);
+    });
+
+    // Existing game JS code (form submission, modal, progress bar updates)
+    const form = document.getElementById('answerForm');
+    const submitButton = document.getElementById('submit-answer');
+    const answerInput = document.getElementById('answer');
+    const stageTitle = document.querySelector('h2.text-2xl');
+    const progressBar = document.getElementById('progress-bar');
+    const livesDisplay = document.querySelector('.text-2xl.font-bold.text-gray-300');
+    const modalIcon = document.getElementById('modalIcon');
+    const challengeId = '{{ challenge_id }}';
+
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        submitButton.disabled = true;
+        const answer = answerInput.value;
+        answerInput.value = '';
+
+        try {
+            const response = await fetch('{% url "game:check_answer" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify({
+                    answer: answer,
+                    challenge_id: challengeId
+                })
+            });
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                modalIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />';
+            } else {
+                modalIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />';
+            }
+
+            showModal(data.status === 'success' ? 'Success!' : 'Error', data.message);
+
+            if (data.redirect) {
+                setTimeout(() => {
+                    window.location.href = data.redirect;
+                }, 2000);
+            } else if (data.status === 'success' && data.next_challenge) {
+                setTimeout(() => {
+                    stageTitle.textContent = `Stage: ${data.next_stage.charAt(0).toUpperCase() + data.next_stage.slice(1)}`;
+
+                    document.getElementById('encrypted-message').textContent = data.next_challenge.encrypted_message;
+                    document.getElementById('encryption-type').textContent = data.next_challenge.encryption_type;
+                    document.getElementById('tutorial').textContent = data.next_challenge.tutorial;
+                    document.getElementById('hint').textContent = data.next_challenge.hint;
+
+                    const stages = ['continent', 'country', 'region', 'city', 'district', 'area', 'street', 'coordinates'];
+                    const currentIndex = stages.indexOf(data.next_stage);
+                    const progress = (currentIndex / stages.length) * 100;
+                    progressBar.style.width = `${progress}%`;
+                    progressBar.classList.remove('bg-black');
+                    progressBar.classList.add('bg-[#00FF00]', 'shadow-[0_0_10px_#00FF00,0_0_20px_#00FF00]');
+
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+                    submitButton.disabled = false;
+                }, 1500);
+            } else {
+                if (data.lives_remaining !== undefined) {
+                    livesDisplay.textContent = data.lives_remaining;
+                }
+                submitButton.disabled = false;
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showModal('Error', 'An error occurred. Please try again.');
+            submitButton.disabled = false;
+        }
+    });
+});
+
+function showModal(title, message) {
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalMessage').textContent = message;
+    document.getElementById('resultModal').classList.remove('hidden');
+}
+
+function closeModal() {
+    document.getElementById('resultModal').classList.add('hidden');
+}
+</script>
+{% endblock %}

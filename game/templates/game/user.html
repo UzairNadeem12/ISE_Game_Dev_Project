@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% load game_tags %}
+
+{% block title %}User Profile - Treasure Hunt{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <!-- User Welcome Section -->
+    <div class="bg-black/90 backdrop-blur-sm rounded-lg shadow-lg p-6 mb-8 border border-neon-500">
+        <h1 class="text-3xl font-bold text-neon-500 mb-4">Welcome, {{ user.username }}!</h1>
+        <p class="text-gray-300">Track your progress and start new adventures here.</p>
+    </div>
+
+    <!-- Game History Section -->
+    <div class="bg-black/90 backdrop-blur-sm rounded-lg shadow-lg p-6 mb-8 border border-neon-500">
+        <h2 class="text-2xl font-bold text-neon-500 mb-4">Game History</h2>
+        {% if game_history %}
+            <div class="space-y-4">
+                {% for history in game_history %}
+                    <div class="border border-neon-500/50 rounded-lg overflow-hidden">
+                        <!-- Game Summary -->
+                        <div class="p-4 {% if history.completed and history.won %}bg-green-900/50{% elif history.completed and not history.won %}bg-red-900/50{% else %}bg-yellow-900/50{% endif %}">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="font-semibold text-neon-500">Game on {{ history.start_time|date:"F j, Y, g:i a" }}</p>
+                                    <p class="text-sm text-gray-300">
+                                        {% if history.completed and history.won %}
+                                            Completed in {{ history.total_time.total_seconds|format_time }}
+                                        {% elif history.completed and not history.won %}
+                                            Lost after {{ history.total_time.total_seconds|format_time }}
+                                        {% else %}
+                                            Reached: {{ history.final_stage|title }}
+                                        {% endif %}
+                                    </p>
+                                    <p class="text-sm text-gray-300">Lives lost: {{ history.lives_lost }}</p>
+                                    <p class="text-sm text-gray-300">Challenge: {{ history.challenge_id }}</p>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <span class="px-3 py-1 rounded-full text-sm 
+                                        {% if history.completed and history.won %}
+                                            bg-green-900/50 text-green-300
+                                        {% elif history.completed and not history.won %}
+                                            bg-red-900/50 text-red-300
+                                        {% else %}
+                                            bg-yellow-900/50 text-yellow-300
+                                        {% endif %}">
+                                        {% if history.completed and history.won %}
+                                            Completed
+                                        {% elif history.completed and not history.won %}
+                                            Lost
+                                        {% else %}
+                                            Incomplete
+                                        {% endif %}
+                                    </span>
+                                    <button onclick="toggleDetails('game-{{ history.id }}')" class="text-neon-500 hover:text-white">
+                                        <svg class="w-6 h-6 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Stage Details -->
+                        <div id="game-{{ history.id }}" class="hidden bg-black/90 border-t border-neon-500/50">
+                            <div class="p-4">
+                                <h3 class="text-lg font-semibold text-neon-500 mb-3">Stage Details</h3>
+                                <div class="space-y-3">
+                                    {% for stage in stage_history %}
+                                        {% if stage.game_history == history %}
+                                            <div class="flex justify-between items-center p-2 bg-gray-900/50 rounded border border-neon-500/30">
+                                                <div>
+                                                    <p class="font-medium text-neon-500">{{ stage.stage|title }}</p>
+                                                    <p class="text-sm text-gray-300">{{ stage.encryption_type }}</p>
+                                                </div>
+                                                <p class="text-sm text-gray-300">
+                                                    {% if stage.time_taken %}
+                                                        {{ stage.time_taken.total_seconds|format_time }}
+                                                    {% else %}
+                                                        Incomplete
+                                                    {% endif %}
+                                                </p>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="bg-yellow-900/50 border border-yellow-500/50 rounded-lg p-4">
+                <p class="text-yellow-300">No attempts to show so far.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Begin New Game Button -->
+    <div class="text-center">
+        <a href="{% url 'game:select_challenge' %}" class="inline-flex items-center px-6 py-3 border border-neon-500 text-base font-medium rounded-md text-neon-500 bg-black/90 hover:shadow-[0_0_10px_var(--text-neon),0_0_20px_var(--text-neon)] transition-all duration-300">
+            Begin New Game
+        </a>
+    </div>
+</div>
+
+<script>
+function toggleDetails(gameId) {
+    const details = document.getElementById(gameId);
+    const button = details.previousElementSibling.querySelector('button svg');
+    details.classList.toggle('hidden');
+    button.classList.toggle('rotate-180');
+}
+</script>
+{% endblock %} 

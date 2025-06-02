@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% load game_tags %}
+
+{% block title %}Select Challenge - Treasure Hunt{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <!-- Challenge Selection Header -->
+    <div class="bg-black/90 backdrop-blur-sm rounded-lg shadow-lg p-6 mb-8 border border-neon-500">
+        <h1 class="text-3xl font-bold text-neon-500 mb-4">Select Your Challenge</h1>
+        <p class="text-gray-300">Choose your adventure and begin your treasure hunt!</p>
+    </div>
+
+    <!-- Challenge Selection Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <!-- Hardcoded European Challenge -->
+        <a href="{% url 'game:home' %}?challenge=1"
+           class="bg-black/90 backdrop-blur-sm rounded-lg shadow-lg p-6 border border-neon-500 hover:shadow-[0_0_10px_var(--text-neon),0_0_20px_var(--text-neon)] transition-all duration-300">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-2xl font-bold text-neon-500 mb-2">Old World Odyssey</h2>
+                    <p class="text-gray-300">Uncover legends, roam ancient streets, and chase adventure across a land steeped in history.</p>
+                </div>
+                <span class="text-4xl font-bold text-neon-500">1</span>
+            </div>
+        </a>
+
+        <!-- Dynamic challenges from GameAdmin -->
+        {% for challenge in challenges %}
+            <a href="{% url 'game:home' %}?challenge={{ challenge.challenge_no }}"
+               class="bg-black/90 backdrop-blur-sm rounded-lg shadow-lg p-6 border border-neon-500 hover:shadow-[0_0_10px_var(--text-neon),0_0_20px_var(--text-neon)] transition-all duration-300">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-bold text-neon-500 mb-2">{{ challenge.title }}</h2>
+                        <p class="text-gray-300">{{ challenge.description }}</p>
+                    </div>
+                    <span class="text-4xl font-bold text-neon-500">{{ challenge.challenge_no }}</span>
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+
+    <!-- Back Button -->
+    <div class="text-center">
+        <a href="{% url 'game:user_profile' %}" class="inline-flex items-center px-6 py-3 border border-neon-500 text-base font-medium rounded-md text-neon-500 bg-black/90 hover:shadow-[0_0_10px_var(--text-neon),0_0_20px_var(--text-neon)] transition-all duration-300">
+            Back to Profile
+        </a>
+    </div>
+</div>
+{% endblock %} 

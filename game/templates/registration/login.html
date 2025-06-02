@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block title %}Login - InfoSec Treasure Hunt{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div class="sm:mx-auto sm:w-full sm:max-w-md bg-black/90 p-6 rounded-lg border border-white">
+        <h2 class="mt-6 text-center text-3xl font-extrabold text-neon-500">
+            Sign in to your account
+        </h2>
+        <p class="mt-2 text-center text-sm text-neon-500">
+            Or
+            <a href="{% url 'game:signup' %}" class="font-medium accent-blue hover:text-neon-500">
+                create a new account
+            </a>
+        </p>
+    </div>
+
+    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div class="bg-black/90 backdrop-blur-sm py-8 px-4 shadow-lg sm:rounded-lg sm:px-10 border border-neon-500">
+            <form class="space-y-6" method="post">
+                {% csrf_token %}
+                {% if form.errors %}
+                    <div class="bg-red-900/50 border border-accent-red text-accent-red px-4 py-3 rounded relative" role="alert">
+                        <strong class="font-bold">Error!</strong>
+                        <span class="block sm:inline">Please check your username and password.</span>
+                    </div>
+                {% endif %}
+                <div>
+                    <label for="id_username" class="block text-sm font-medium text-neon-500">
+                        Username
+                    </label>
+                    <div class="mt-1">
+                        <input id="id_username" name="username" type="text" required
+                               class="appearance-none block w-full px-3 py-2 bg-black/50 border border-neon-500 rounded-md shadow-sm text-neon-500 placeholder-neon-500/50 focus:outline-none focus:ring-neon-500 focus:border-neon-500 sm:text-sm [&:-webkit-autofill]:bg-black/50 [&:-webkit-autofill]:text-[#00FF00] [&:-webkit-autofill]:shadow-[0_0_0_1000px_black_inset] [&:-webkit-autofill]:[-webkit-text-fill-color:#00FF00]">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="id_password" class="block text-sm font-medium text-neon-500">
+                        Password
+                    </label>
+                    <div class="mt-1 relative">
+                        <input id="id_password" name="password" type="password" required
+                               class="appearance-none block w-full px-3 py-2 bg-black/50 border border-neon-500 rounded-md shadow-sm text-neon-500 placeholder-neon-500/50 focus:outline-none focus:ring-neon-500 focus:border-neon-500 sm:text-sm [&:-webkit-autofill]:bg-black/50 [&:-webkit-autofill]:text-[#00FF00] [&:-webkit-autofill]:shadow-[0_0_0_1000px_black_inset] [&:-webkit-autofill]:[-webkit-text-fill-color:#00FF00]">
+                        <button type="button" onclick="togglePassword()" class="absolute inset-y-0 right-0 pr-3 flex items-center text-neon-500 hover:text-neon-400">
+                            <svg id="eye-icon" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <button type="submit"
+                            class="w-full flex justify-center py-2 px-4 border border-neon-500 rounded-md shadow-sm text-sm font-medium text-neon-500 bg-black/50 hover:shadow-[0_0_10px_var(--text-neon),0_0_20px_var(--text-neon)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neon-500 transition-all duration-300">
+                        Sign in
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function togglePassword() {
+    const passwordInput = document.getElementById('id_password');
+    const eyeIcon = document.getElementById('eye-icon');
+    
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        eyeIcon.innerHTML = `
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+        `;
+    } else {
+        passwordInput.type = 'password';
+        eyeIcon.innerHTML = `
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+        `;
+    }
+}
+</script>
+{% endblock %} 
